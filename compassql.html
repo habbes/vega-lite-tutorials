@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compassql demo</title>
+    <meta charset="utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.4.0/build/vega.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@4.0.0-beta.0/build/vega-lite.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@4.2.1/build/vega-embed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@5.9.7/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/compassql@0.21.1/build/compassql.min.js"></script>
+    <style media="screen">
+        /* Add space between Vega-Embed links  */
+        .vega-actions a {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compassql</h1>
+
+    <div id="vis"></div>
+
+<script>
+    d3.csv('data/seattle-weather.csv').then((data) => {
+        const opt = {};
+        const schema = cql.schema.build(data, opt);
+        const query = {
+            spec: {
+                data: { url: 'data/seattle-weather.csv' },
+                mark: '?',
+                encodings: [
+                    {
+                        channel: "?",
+                        bin: "?",
+                        timeUnit: "?",
+                        field: "?",
+                        type: '?'
+                    },{
+                        channel: "?",
+                        field: "*",
+                        type: "quantitative",
+                        aggregate: "count"
+                    }
+                ]
+            },
+            groupBy: ["field", "aggregate", "bin", "timeUnit", "stack"],
+            chooseBy: 'effectiveness'
+        };
+
+        const output = cql.recommend(query, schema, opt);
+        const result = output.result;
+
+         // 5) Convert the result tree of SpecQueryModel into a tree of Vega-Lite specifications.
+        const vlTree = cql.result.mapLeaves(result, function(item) {
+            return item.toSpec();
+        });
+
+        console.log('vlTree', vlTree);
+        console.log('vlTree items', vlTree.items);
+
+        // 6) Use the result.  In this case, the tree has only 2 levels (the root and leaves).
+        // We can just get the top visualization by accessing the 0-th item.
+        const topVlSpec = vlTree.items[0];
+
+        // vegaEmbed('#vis', topVlSpec);
+        vlTree.items.forEach((item) => {
+            const el = document.createElement('div');
+            el.id = `vis-${Math.floor(Math.random() * 100000).toString()}`;
+            document.body.appendChild(el);
+            vegaEmbed(`#${el.id}`, item.items[0]);
+        });
+    });
+</script>
+</body>
+</html>
