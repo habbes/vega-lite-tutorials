@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Vega Lite Data Exploration</title>
+        <meta charset="utf-8">
+        <script src="https://cdn.jsdelivr.net/npm/vega@5.4.0/build/vega.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vega-lite@4.0.0-beta.0/build/vega-lite.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vega-embed@4.2.1/build/vega-embed.js"></script>
+        <style media="screen">
+            /* Add space between Vega-Embed links  */
+            .vega-actions a {
+                margin-right: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Exploring data</h1>
+
+        <div id="visWrapper"></div>
+
+        <script>
+            const $schema = 'https://vega.github.io/schema/vega-lite/v3.json';
+            const data = { url: 'data/seattle-weather.csv' };
+            const charts = [
+                {
+                    title: 'Precipitation distribution',
+                    spec: {
+                        mark: 'tick',
+                        encoding: {
+                            x: { field: 'precipitation', type: 'quantitative' }
+                        }
+                    }
+                },
+                {
+                    title: 'Precipitation histogram',
+                    spec: {
+                        mark: 'bar',
+                        encoding: {
+                            x: { field: 'precipitation', type: 'quantitative', bin: true },
+                            y: { aggregate: 'count', type: 'quantitative' }
+                        }
+                    }
+                },
+                {
+                    title: 'Precipitation per month',
+                    spec: {
+                        mark: 'line',
+                        encoding: {
+                            x: { field: 'date', type: 'temporal', timeUnit: 'month' },
+                            y: { field: 'precipitation', type: 'quantitative', aggregate: 'mean' }
+                        }
+                    }
+                },
+                {
+                    title: 'Temperature seasons',
+                    spec: {
+                        mark: 'line',
+                        encoding: {
+                            x: { field: 'date', type: 'temporal', timeUnit: 'yearmonth' },
+                            y: { field: 'temp_max', type: 'quantitative', aggregate: 'max' }
+                        }
+                    }
+                },
+                {
+                    title: 'Average max temperature year on year',
+                    spec: {
+                        mark: 'line',
+                        encoding: {
+                            x: { field: 'date', type: 'temporal', timeUnit: 'year' },
+                            y: { field: 'temp_max', type: 'quantitative', aggregate: 'mean' }
+                        }
+                    }
+                },
+                {
+                    title: 'Mean temperature range by month',
+                    spec: {
+                        mark: 'line',
+                        transform: [
+                            { calculate: 'datum.temp_max - datum.temp_min', as: 'temp_range' }
+                        ],
+                        encoding: {
+                            x: { field: 'date', type: 'temporal', timeUnit: 'month' },
+                            y: { field: 'temp_range', type: 'quantitative', aggregate: 'mean' }
+                        }
+                    }
+                },
+                {
+                    title: 'Weather types by month',
+                    spec: {
+                        mark: 'bar',
+                        encoding: {
+                            x: {
+                                field: 'date', type: 'temporal', timeUnit: 'month',
+                                axis: { title: 'Month of the year' }
+                            },
+                            y: {
+                                aggregate: 'count', field: '*', type: 'quantitative'
+                            },
+                            color: {
+                                field: 'weather', type: 'nominal',
+                                legend: { title: 'Weather type' },
+                                scale: {
+                                    domain: ["sun", "fog", "drizzle", "rain", "snow"],
+                                    range: ["#e7ba52", "#c7c7c7", "#aec7e8", "#1f77b4", "#9467bd"]
+                                }
+                            }
+                        }
+                    }
+                }
+            ];
+
+            const wrapper = document.querySelector('#visWrapper');
+            charts.forEach((chart) => {
+                const spec = { $schema, data, ...chart.spec };
+                const title = chart.title;
+                const id = chart.title.toLowerCase().replace(/\s+/g, '_');
+                const el = document.createElement('DIV');
+                el.id = id;
+                spec.title = title;
+                wrapper.appendChild(el);
+                vegaEmbed(`#${id}`, spec);
+            })
+        </script>
+    </body>
+</html>
